@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>传智健康</title>
+    <meta name="description" content="传智健康">
+    <meta name="keywords" content="传智健康">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入组件库 -->
+    <script src="../plugins/elementui/vue.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script src="../plugins/echarts/echarts.js"></script>
+
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>统计分析
+            <small>预约/支付统计</small>
+        </h1>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+            <div id="chart1" style="height:600px;"></div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    // 基于准备好的dom，初始化echarts实例
+    let myChart = echarts.init(document.getElementById('chart1'));
+
+    let option = {
+        title: {
+            text: '预约/支付统计'
+        },
+        tooltip: {
+            trigger: 'axis'
+        },
+        legend: {
+            data: ['预约数量', '支付数量']
+        },
+        toolbox: {
+            show: true,
+            feature: {
+                magicType: {show: true, type: ['stack', 'tiled']},
+                saveAsImage: {show: true}
+            }
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            data: ['2020-05', '2020-06', '2020-07', '2020-08', '2020-09', '2020-10', '2020-11', '2020-12', '2021-01', '2021-02', '2021-03', '2021-04']
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {
+                name: '预约数量',
+                type: 'line',
+                stack: '总量',
+                data: [120, 132, 101, 134, 90, 230, 210, 101, 134, 90, 230, 210]
+            },
+            {
+                name: '支付数量',
+                type: 'line',
+                stack: '总量',
+                data: [110, 122, 100, 114, 90, 200, 200, 100, 104, 80, 220, 200]
+            }
+        ]
+    };
+    // 使用刚指定的配置项和数据显示图表。
+    myChart.setOption(option);
+</script>
+</body>
+</html>

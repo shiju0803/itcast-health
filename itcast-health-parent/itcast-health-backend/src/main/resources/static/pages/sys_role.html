@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>传智健康</title>
+    <meta name="description" content="传智健康">
+    <meta name="keywords" content="传智健康">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../plugins/elementui/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <style>
+        .datatable {
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-flex: 1;
+            width: 100%;
+            max-width: 100%;
+            font-size: 14px;
+            color: rgb(96, 98, 102);
+            overflow: hidden;
+            flex: 1 1 0%;
+        }
+
+        .datatable td, .datatable th {
+            padding: 12px 0;
+            min-width: 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            position: relative;
+            text-align: left;
+        }
+    </style>
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>系统管理
+            <small>角色管理</small>
+        </h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>系统管理</el-breadcrumb-item>
+            <el-breadcrumb-item>角色管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <el-input placeholder="角色名称/关键字" v-model="pagination.queryString" style="width: 200px;"
+                          class="filter-item" @keyup.enter.native="handleFilter"></el-input>
+                <el-button @click="pagination.currentPage=1;findPage()" class="dalfBut">查询</el-button>
+                <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+            </div>
+            <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column type="index" align="center" label="序号"></el-table-column>
+                <el-table-column prop="name" label="角色名称" align="center"></el-table-column>
+                <el-table-column prop="keyword" label="角色关键字" align="center"></el-table-column>
+                <el-table-column prop="description" label="角色描述" align="center"></el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+            <div class="pagination-container">
+                <el-pagination
+                        class="pagiantion"
+                        @current-change="handleCurrentChange"
+                        :current-page="pagination.currentPage"
+                        :page-size="pagination.pageSize"
+                        layout="total, prev, pager, next, jumper"
+                        :total="pagination.total">
+                </el-pagination>
+            </div>
+            <!-- 新增标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="新增角色" :visible.sync="dialogFormVisible">
+                    <template>
+                        <el-tabs v-model="activeName" type="card">
+                            <el-tab-pane label="基本信息" name="first">
+                                <el-form label-position="right" label-width="100px">
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="角色名称">
+                                                <el-input v-model="formData.name"/>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="关键字">
+                                                <el-input v-model="formData.keyword"/>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="24">
+                                            <el-form-item label="角色描述">
+                                                <el-input v-model="formData.description" type="textarea"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                </el-form>
+                            </el-tab-pane>
+
+                            <el-tab-pane label="菜单信息" name="second">
+                                <div class="checkScrol">
+                                    <el-table
+                                            :data="menuList"
+                                            style="width: 100%;margin-bottom: 20px;"
+                                            row-key="id"
+                                            border
+                                            :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+                                            size="mini">
+
+                                        <el-table-column width="70" label="点击展开">
+                                        </el-table-column>
+
+                                        <el-table-column width="100" label="选择菜单">
+                                            <template slot-scope="scope">
+                                                <input v-model="menuIds" type="checkbox" :value="scope.row.id">
+                                            </template>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                prop="name"
+                                                label="菜单名称"
+                                                sortable
+                                                width="180">
+                                        </el-table-column>
+                                        <el-table-column
+                                                prop="linkUrl"
+                                                label="菜单路径"
+                                                sortable
+                                                width="180">
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                prop="description"
+                                                label="菜单说明">
+                                        </el-table-column>
+                                    </el-table>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="权限信息" name="third">
+                                <div class="checkScrol">
+                                    <table class="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>选择</th>
+                                            <th>权限名称</th>
+                                            <th>权限关键字</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="c in permissionList">
+                                            <td>
+                                                <input :id="c.id" v-model="permissionIds" type="checkbox" :value="c.id">
+                                            </td>
+                                            <td><label :for="c.id">{{c.name}}</label></td>
+                                            <td><label :for="c.id">{{c.keyword}}</label></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </template>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取消</el-button>
+                        <el-button type="primary" @click="handleAdd()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+
+            <!-- 编辑标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="新增角色" :visible.sync="dialogFormVisible4Edit">
+                    <template>
+                        <el-tabs v-model="activeName" type="card">
+                            <el-tab-pane label="基本信息" name="first">
+                                <el-form label-position="right" label-width="100px">
+                                    <el-row>
+                                        <el-col :span="12">
+                                            <el-form-item label="角色名称">
+                                                <el-input v-model="formData.name"/>
+                                            </el-form-item>
+                                        </el-col>
+                                        <el-col :span="12">
+                                            <el-form-item label="关键字">
+                                                <el-input v-model="formData.keyword"/>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                    <el-row>
+                                        <el-col :span="24">
+                                            <el-form-item label="角色描述">
+                                                <el-input v-model="formData.description" type="textarea"></el-input>
+                                            </el-form-item>
+                                        </el-col>
+                                    </el-row>
+                                </el-form>
+                            </el-tab-pane>
+
+                            <el-tab-pane label="菜单信息" name="second">
+                                <div class="checkScrol">
+                                    <el-table
+                                            :data="menuList"
+                                            style="width: 100%;margin-bottom: 20px;"
+                                            row-key="id"
+                                            border
+                                            :tree-props="{children: 'children', hasChildren: 'hasChildren'}"
+                                            size="mini">
+
+                                        <el-table-column width="70" label="点击展开">
+                                        </el-table-column>
+
+                                        <el-table-column width="60" label="选择菜单">
+                                            <template slot-scope="scope">
+                                                <input v-model="menuIds" type="checkbox" :value="scope.row.id">
+                                            </template>
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                prop="name"
+                                                label="菜单名称"
+                                                sortable
+                                                width="180">
+                                        </el-table-column>
+                                        <el-table-column
+                                                prop="linkUrl"
+                                                label="菜单路径"
+                                                sortable
+                                                width="180">
+                                        </el-table-column>
+
+                                        <el-table-column
+                                                prop="description"
+                                                label="菜单说明">
+                                        </el-table-column>
+                                    </el-table>
+                                </div>
+                            </el-tab-pane>
+                            <el-tab-pane label="权限信息" name="third">
+                                <div class="checkScrol">
+                                    <table class="datatable">
+                                        <thead>
+                                        <tr>
+                                            <th>选择</th>
+                                            <th>权限名称</th>
+                                            <th>权限关键字</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        <tr v-for="c in permissionList">
+                                            <td>
+                                                <input :id="c.id" v-model="permissionIds" type="checkbox" :value="c.id">
+                                            </td>
+                                            <td><label :for="c.id">{{c.name}}</label></td>
+                                            <td><label :for="c.id">{{c.keyword}}</label></td>
+                                        </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </el-tab-pane>
+                        </el-tabs>
+                    </template>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible4Edit = false">取消</el-button>
+                        <el-button type="primary" @click="handleEdit()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            activeName: 'first',//添加/编辑窗口Tab标签名称
+            pagination: {//分页相关属性
+                currentPage: 1,
+                pageSize: 10,
+                total: 100,
+                queryString: null,
+            },
+            dataList: [],//列表数据
+            formData: {},//表单数据
+            permissionList: [],//新增和编辑表单中对应的检查项列表数据
+            permissionIds: [],//新增和编辑表单中检查项对应的复选框，基于双向绑定可以进行回显和数据提交
+            menuList: [],
+            menuIds: [],
+            dialogFormVisible: false,//控制添加窗口显示/隐藏
+            dialogFormVisible4Edit: false//控制编辑窗口显示/隐藏
+        },
+        created() {
+            this.findPage();
+        },
+        watch: {
+            menuIds: function (val) {
+                if (!this.menuIds || this.menuIds.length == 0) {
+                    this.permissionList = [];
+                    return;
+                }
+                this.findMenuAssociationPermission();
+            }
+        },
+        methods: {
+            //编辑
+            handleEdit() {
+                //发送ajax请求完成更新
+                var url = "/role?permissionIds= " + this.permissionIds + "&menuIds=" + this.menuIds;
+                axios.put(url, this.formData).then(response => {
+                    if (response.data.flag) {
+                        //隐藏弹出框
+                        this.dialogFormVisible4Edit = false;
+                        this.$message.success(response.data.message);
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                }).finally(() => {
+                    this.findPage();
+                })
+            },
+            //添加
+            handleAdd() {
+                //发送异步请求
+                var url = "/role?permissionIds= " + this.permissionIds + "&menuIds=" + this.menuIds;
+                axios.post(url, this.formData).then(response => {
+                    if (response.data.flag) {
+                        //隐藏弹出框
+                        this.dialogFormVisible = false;
+                        this.$message.success(response.data.message);
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                }).finally(() => {
+                    //重新查询分页信息
+                    this.findPage();
+                })
+            },
+            //分页查询
+            findPage() {
+                //发送异步请求
+                axios.get("/role/page", {params: this.pagination}).then(response => {
+                    if (response.data.flag) {
+                        this.dataList = response.data.data.rows;
+                        this.pagination.total = response.data.data.total;
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                });
+            },
+            // 重置表单
+            resetForm() {
+                this.formData = {};
+            },
+            // 弹出添加窗口
+            handleCreate() {
+                //重置表单数据
+                this.resetForm();
+                //默认切换到第一个标签页（基本信息）
+                this.activeName = 'first';
+                //展示新增弹出框
+                this.dialogFormVisible = true;
+
+                this.menuIds = [];
+                this.permissionIds = [];
+
+                this.findAllMenu();
+
+            },
+            findAllMenu() {
+                //发送异步请求
+                axios.get("/menu/page", {params: {currentPage: 1, pageSize: 100}}).then(response => {
+                    if (response.data.flag) {
+                        this.menuList = response.data.data.rows;
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                });
+
+            },
+            //查询菜单关联的权限
+            findMenuAssociationPermission() {
+                if (!this.menuIds || this.menuIds.length == 0) {
+                    return;
+                }
+                //发送异步请求
+                axios.get("/permission/menu/association?menuIds=" + this.menuIds).then(response => {
+                    if (response.data.flag) {
+                        this.permissionList = response.data.data;
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                });
+            },
+            // 弹出编辑窗口
+            handleUpdate(row) {
+                this.resetForm();
+
+                //查询所有的菜单信息
+                this.findAllMenu();
+
+                this.menuIds = [];
+                this.permissionIds = [];
+
+                this.activeName = "first";
+                //查询检查组基本信息
+                axios.get("/role/" + row.id).then(response => {
+                    if (response.data.flag) {
+                        this.formData = response.data.data;
+                        this.dialogFormVisible4Edit = true;
+                        return;
+                    }
+
+                    this.$message.error(response.data.message);
+                });
+
+                //查询角色关联的菜单ID
+                axios.get("/role/" + row.id + "/menu").then(response => {
+                    if (response.data.flag) {
+                        this.menuIds = response.data.data;
+                        return;
+                    }
+                });
+
+                //查询角色关联的权限信息
+                axios.get("/role/" + row.id + "/permission").then(response => {
+                    if (response.data.flag) {
+                        this.permissionIds = response.data.data;
+                        return;
+                    }
+                });
+            },
+            //切换页码
+            handleCurrentChange(currentPage) {
+                this.pagination.currentPage = currentPage;
+                this.findPage();
+            },
+            // 删除
+            handleDelete(row) {
+                this.$confirm("您确定要删除此记录吗?", "提示", {
+                    confirmButtonText: '确定',
+                    cancelButtonText: '取消',
+                    type: 'warning'
+                }).then(() => {
+                    //发送异步请求, 删除检查组
+                    axios.delete("/role/" + row.id).then(response => {
+                        if (response.data.flag) {
+                            this.$message.success(response.data.message);
+                            return;
+                        }
+                        this.$message.error(response.data.message);
+                    }).finally(() => {
+                        this.findPage();
+                    });
+                });
+            }
+        }
+    })
+</script>
+</html>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.itcast.dao.SetmealDao">
+
+    <!-- void add(Setmeal setmeal);-->
+    <insert id="add" parameterType="setmeal">
+        <selectKey resultType="java.lang.Integer" order="AFTER" keyProperty="id" keyColumn="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into t_setmeal values
+        (null,#{name},#{code},#{helpCode},#{sex},#{age},#{price},#{remark},#{attention},#{img})
+    </insert>
+
+    <!-- void setCheckGroupAssociation(@Param("setmealId") Integer setmealId, @Param("checkGroupId") Integer checkGroupId);-->
+    <insert id="setCheckGroupAssociation">
+        insert into t_setmeal_checkgroup values (#{setmealId},#{checkGroupId})
+    </insert>
+
+    <!-- Page<Setmeal> findByCondition(String queryString);-->
+    <select id="findByCondition" parameterType="string" resultType="setmeal">
+        select * from t_setmeal
+        <where>
+            <if test=" value!=null and value.length>0 ">
+                and code like "%"#{value}"%" or name like "%"#{value}"%" or helpCode like "%"#{value}"%"
+            </if>
+        </where>
+    </select>
+
+    <!--Integer[] findCheckGroupAssociationIds(Integer setMealId);-->
+    <select id="findCheckGroupAssociationIds" parameterType="int" resultType="int">
+        select checkgroup_id from t_setmeal_checkgroup where setmeal_id = #{setmealId}
+    </select>
+
+    <!--Setmeal findById(Integer id);-->
+    <select id="findById" parameterType="int" resultType="setmeal">
+        select * from t_setmeal where  id = #{id}
+    </select>
+
+    <!--void update(Setmeal setmeal);-->
+    <update id="update" parameterType="setmeal">
+        update t_setmeal
+        <set>
+            <if test=" name!=null and name.length>0 ">
+                name = #{name} ,
+            </if>
+            <if test=" code!=null and code.length>0 ">
+                code = #{code},
+            </if>
+            <if test=" helpCode!=null and helpCode.length>0 ">
+                helpCode = #{helpCode} ,
+            </if>
+            <if test=" sex!=null and sex.length>0 ">
+                sex = #{sex} ,
+            </if>
+            <if test=" age!=null and age.length>0 ">
+                age = #{age} ,
+            </if>
+            <if test=" price!=null and price>0 ">
+                price = #{price} ,
+            </if>
+            <if test=" remark!=null and remark.length>0 ">
+                remark = #{remark} ,
+            </if>
+            <if test=" attention!=null and attention.length>0 ">
+                attention = #{attention} ,
+            </if>
+            <if test=" img!=null and img.length>0 ">
+                img = #{img} ,
+            </if>
+        </set>
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <!-- void deleteCheckGroupAssociation(Integer id);-->
+    <delete id="deleteCheckGroupAssociation" parameterType="int">
+        delete from t_setmeal_checkgroup where setmeal_id = #{setmealId}
+    </delete>
+
+    <!--void deleteById(Integer id);-->
+    <delete id="deleteById" parameterType="int">
+        delete from t_setmeal where id = #{id}
+    </delete>
+
+    <!-- List<Setmeal> findAll();-->
+    <select id="findAll" resultType="setmeal">
+         select * from t_setmeal
+    </select>
+
+    <!--体检套餐的结果集映射-->
+    <resultMap id="Setmeal_CheckGroup" type="setmeal" autoMapping="true">
+        <id property="id" column="id"></id>
+
+        <collection property="checkGroups"
+                    javaType="list"
+                    ofType="checkGroup"
+                    column="id"
+                    select="cn.itcast.dao.CheckGroupDao.findBySetmealIdWithDetails"></collection>
+    </resultMap>
+
+    <!--Setmeal findSetmealDetail(Integer id);-->
+    <select id="findDetailsById" parameterType="int" resultMap="Setmeal_CheckGroup">
+        select * from t_setmeal where id = #{id}
+    </select>
+
+    <!--List<Map<String, Object>> findSetmealOrderedCount();-->
+    <select id="findSetmealOrderedCount" resultType="map">
+        select s.name,count(o.id) as `value` from t_order o ,t_setmeal s  where o.setmealId = s.id  group by s.name
+    </select>
+</mapper>

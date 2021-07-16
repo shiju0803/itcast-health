@@ -1,0 +1,29 @@
+server:
+  port: 8000
+spring:
+  application:
+    name: itcast-health-service
+  datasource:
+    driver-class-name: com.mysql.jdbc.Driver
+    url: jdbc:mysql://192.168.200.130:3306/itcast_health?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
+  redis:
+    host: localhost
+    port: 6379
+mybatis:
+  type-aliases-package: cn.itcast.pojo
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+dubbo:
+  application:
+    name: itcast-health-service
+  registry:
+    address: zookeeper://192.168.200.130:2181
+    client: zkclient
+    timeout: 60000
+  consumer:
+    timeout: 60000
+  scan:
+    base-packages: cn.itcast

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- 页面meta -->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>传智健康</title>
+    <meta name="description" content="传智健康">
+    <meta name="keywords" content="传智健康">
+    <meta content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" name="viewport">
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="../plugins/elementui/index.css">
+    <link rel="stylesheet" href="../plugins/font-awesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- 引入组件库 -->
+    <script type="text/javascript" src="../js/jquery.min.js"></script>
+    <script src="../plugins/elementui/vue.js"></script>
+    <script src="../plugins/elementui/index.js"></script>
+    <script src="../js/axios-0.18.0.js"></script>
+    <script type="text/javascript"
+            src="http://api.map.baidu.com/api?v=3.0&ak=oS8xP2A8BrhTxhNjj0GtUUFWPAvhgnZQ"></script>
+    <style>
+        .datatable {
+            position: relative;
+            box-sizing: border-box;
+            -webkit-box-flex: 1;
+            width: 100%;
+            max-width: 100%;
+            font-size: 14px;
+            color: rgb(96, 98, 102);
+            overflow: hidden;
+            flex: 1 1 0%;
+        }
+
+        .datatable td, .datatable th {
+            padding: 12px 0;
+            min-width: 0;
+            -webkit-box-sizing: border-box;
+            box-sizing: border-box;
+            text-overflow: ellipsis;
+            vertical-align: middle;
+            position: relative;
+            text-align: left;
+        }
+    </style>
+
+
+
+</head>
+<body class="hold-transition">
+<div id="app">
+    <div class="content-header">
+        <h1>工作台
+            <small>分院管理</small>
+        </h1>
+        <el-breadcrumb separator-class="el-icon-arrow-right" class="breadcrumb">
+            <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+            <el-breadcrumb-item>工作台</el-breadcrumb-item>
+            <el-breadcrumb-item>分院管理</el-breadcrumb-item>
+        </el-breadcrumb>
+    </div>
+    <div class="app-container">
+        <div class="box">
+            <div class="filter-container">
+                <el-button type="primary" class="butT" @click="handleCreate()">新建</el-button>
+            </div>
+            <el-table size="small" current-row-key="id" :data="dataList" stripe highlight-current-row>
+                <el-table-column type="index" align="center" label="序号"></el-table-column>
+                <el-table-column prop="code" label="分院编码" align="center"></el-table-column>
+                <el-table-column prop="name" label="分院名称" align="center"></el-table-column>
+                <el-table-column prop="coordinate" label="分院坐标" align="center"></el-table-column>
+                <el-table-column prop="enable" label="是否启用" align="center">
+                    <template slot-scope="scope">
+                        <el-switch
+                                v-model="scope.row.enable"
+                                inactive-color="red"
+                                inactive-text="未启用"
+                                :inactive-value="0"
+
+                                active-color="green"
+                                active-text="启用"
+                                :active-value="1">
+                        </el-switch>
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" align="center">
+                    <template slot-scope="scope">
+                        <el-button type="primary" size="mini" @click="handleUpdate(scope.row)">编辑</el-button>
+                        <el-button size="mini" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <!-- 新增标签弹层 -->
+            <div class="add-form">
+                <el-dialog title="新增地址" :visible.sync="dialogFormVisible" @opened="initMap()">
+                    <el-form ref="dataAddForm" label-position="right" label-width="100px">
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="分院编码" prop="code">
+                                    <el-input v-model="formData.code"/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="分院名称" prop="name">
+                                    <el-input v-model="formData.name"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="分院坐标" prop="coordinate">
+                                    <el-input v-model="formData.coordinate" readonly/>
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="是否启用" prop="enable">
+                                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <el-radio v-model="formData.enable" :label="1">启用</el-radio>
+                                    <el-radio v-model="formData.enable" :label="0">禁用</el-radio>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="12">
+                                <el-form-item label="输入地址">
+                                    <el-select
+                                            v-model="formData.address"
+                                            filterable
+                                            remote
+                                            reserve-keyword
+                                            placeholder="请输入地址"
+                                            :remote-method="searchMap"
+                                            @change="resetMap">
+
+                                        <el-option
+                                                v-for="item in addressList"
+                                                :label="item.address"
+                                                :value="item">
+                                        </el-option>
+                                    </el-select>
+
+                                </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                                <el-form-item label="详细地址">
+                                    <el-input v-model="formData.detail"/>
+                                </el-form-item>
+                            </el-col>
+                        </el-row>
+                        <el-row>
+                            <el-col :span="24" style="height: 200px;">
+                                <div id="allmap" style="margin: auto;height: 100%;width: 90%"></div>
+                            </el-col>
+                        </el-row>
+                    </el-form>
+                    <div slot="footer" class="dialog-footer">
+                        <el-button @click="dialogFormVisible = false">取消</el-button>
+                        <el-button type="primary" @click="handleSubmit()">确定</el-button>
+                    </div>
+                </el-dialog>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            addressList: [],
+            dataList: [],//列表数据
+            formData: {},//表单数据
+            tableData: [],//新增和编辑表单中对应的检查项列表数据
+            dialogFormVisible: false,//控制添加窗口显示/隐藏
+        },
+        created() {
+            this.findPage();
+        },
+        methods: {
+            //编辑
+            handleEdit() {
+                //发送ajax请求完成更新
+                var url = "/checkgroup/update?checkitemIds= " + this.checkitemIds;
+                axios.put(url, this.formData).then(response => {
+                    if (response.data.flag) {
+                        //隐藏弹出框
+                        this.dialogFormVisible4Edit = false;
+                        this.$message.success(response.data.message);
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                }).finally(() => {
+                    this.findPage();
+                })
+            },
+            initMap(lng, lat) {
+                map = new BMap.Map("allmap");
+                var point = new BMap.Point(116.331398, 39.897445);
+                map.centerAndZoom(point, 12);
+
+                function myFun(result) {
+                    var cityName = result.name;
+                    map.setCenter(cityName);
+                }
+              
+            },
+            //添加
+            handleSubmit() {
+                //发送异步请求
+                var url = "/address/submit";
+                axios.post(url, this.formData).then(response => {
+                    if (response.data.flag) {
+                        //隐藏弹出框
+                        this.dialogFormVisible = false;
+                        this.$message.success(response.data.message);
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                }).finally(() => {
+                    //重新查询分页信息
+                    this.findPage();
+                })
+            },
+            //分页查询
+            findPage() {
+                //发送异步请求
+                var url = "/address/findAll";
+                axios.get(url).then(response => {
+                    if (response.data.flag) {
+                        this.dataList = response.data.data;
+                        return;
+                    }
+                    this.$message.error(response.data.message);
+                })
+            },
+            // 重置表单
+            resetForm() {
+                this.formData = {};
+            },
+            // 弹出添加窗口
+            handleCreate() {
+                //重置表单数据
+                this.resetForm();
+                //展示新增弹出框
+                this.dialogFormVisible = true;
+            },
+            // 弹出编辑窗口
+            handleUpdate(row) {
+                this.resetForm();
+                //查询检查组基本信息
+                axios.get("/address/" + row.id).then(response => {
+                    if (!response.data.flag) {
+                        this.$message.error(response.data.message);
+                        return;
+                    }
+
+                    this.dialogFormVisible = true;
+
+                    this.formData = response.data.data;
+                });
+            }
+        }
+    });
+
+</script>
+</html>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="cn.itcast.dao.CheckGroupDao">
+
+    <!--void add(CheckGroup checkGroup);-->
+    <insert id="add" parameterType="checkGroup">
+
+        <!--
+        resultType : 返回主键的数据类型
+        order : 查询生成主键的时机
+        keyProperty : 实体类与数据库主键列对应的属性名称, 返回的主键会自动封装到这个属性中
+        keyColumn : 数据库主键列名称
+        -->
+        <selectKey resultType="int" order="AFTER" keyProperty="id" keyColumn="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+
+        insert into t_checkgroup values (null , #{code},#{name},#{helpCode},#{sex},#{remark},#{attention})
+    </insert>
+
+
+    <!--void setCheckGroupAndCheckItem(@Param("checkGroupId") Integer checkGroupId,@Param("checkItemId") Integer checkItemId);-->
+    <!--void setCheckGroupAndCheckItem(Integer checkGroupId,Integer checkItemId);-->
+    <insert id="setCheckItemsAssociation">
+        insert into t_checkgroup_checkitem values (#{checkGroupId},#{checkItemId})
+    </insert>
+
+    <!--Page<CheckGroup> selectByCondition(String queryString);-->
+    <select id="selectByCondition" parameterType="string" resultType="checkGroup">
+        select * from t_checkgroup
+        <where>
+            <if test="value != null and value.length > 0">
+                and code like "%"#{value}"%" or name like "%"#{value}"%" or helpCode like "%${value}%"
+            </if>
+        </where>
+    </select>
+
+    <!-- CheckGroup findById(Integer id);-->
+    <select id="findById" parameterType="int" resultType="checkGroup">
+        select * from t_checkgroup where  id = #{id}
+    </select>
+
+    <!-- Integer[] selectedCheckItemsId(Integer checkGroupId);-->
+    <select id="findCheckItemsAssociationIds" parameterType="int" resultType="int">
+        select checkitem_id from t_checkgroup_checkitem where checkgroup_id = #{checkgroupId}
+    </select>
+
+    <!-- void update(CheckGroup checkGroup);-->
+    <update id="update" parameterType="checkGroup">
+        update t_checkgroup
+        <set>
+            <if test="name != null">
+                name = #{name},
+            </if>
+            <if test="sex != null">
+                sex = #{sex},
+            </if>
+            <if test="code != null">
+                code = #{code},
+            </if>
+            <if test="helpCode != null">
+                helpCode = #{helpCode},
+            </if>
+            <if test="attention != null">
+                attention = #{attention},
+            </if>
+            <if test="remark != null">
+                remark = #{remark},
+            </if>
+        </set>
+        where id = #{id}
+    </update>
+
+    <!--void deleteCheckItemsAssociation(Integer id);-->
+    <delete id="deleteCheckItemsAssociation" parameterType="int">
+        delete from t_checkgroup_checkitem where checkgroup_id = #{checkgroupId}
+    </delete>
+
+    <!-- void deleteById(Integer id);-->
+    <delete id="deleteById" parameterType="int">
+        delete from t_checkgroup where  id = #{id}
+    </delete>
+
+    <!--List<CheckGroup> findAl();-->
+    <select id="findAl" resultType="checkGroup">
+        select * from t_checkgroup
+    </select>
+
+
+    <resultMap id="CheckGroup_CheckItem" type="checkGroup" autoMapping="true">
+        <id property="id" column="id"></id>
+
+        <collection property="checkItems"
+                    javaType="list"
+                    ofType="checkItem"
+                    column="id"
+                    select="cn.itcast.dao.CheckItemDao.findByCheckGroupId"></collection>
+    </resultMap>
+
+    <!--List<CheckGroup> findBySetmealIdWithDetails(Integer setmealId);-->
+    <select id="findBySetmealIdWithDetails" parameterType="int" resultMap="CheckGroup_CheckItem">
+        select * from t_checkgroup where  id in ( select checkgroup_id from t_setmeal_checkgroup where  setmeal_id = #{setmealId})
+    </select>
+
+</mapper>
